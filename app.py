@@ -5,13 +5,18 @@ from dotenv import load_dotenv
 from assistant import get_assistant_answer
 
 # Load API keys from the .env file
-load_dotenv()
+# load_dotenv()
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
+#openai_api_key = os.getenv("OPENAI_API_KEY")
+
+
+openai_api_key = st.secrets["OPENAI_API_KEY"]
 
 # Initialize OpenAI API client
 if openai_api_key:
     openai_client = OpenAI(api_key=openai_api_key)
+    if openai_client:
+        print("OpenAI client created.")
 else:
     st.error("Failed to load OpenAI API key")
     st.stop()  # Stop execution if the key is not found
