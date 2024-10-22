@@ -39,7 +39,7 @@ def main():
         else: 
             proceed = True
     #################
-    
+    #proceed = True
     if proceed == True:
         # Verificamos si 'thread_id' está en session_state, si no, lo inicializamos
         if "thread_id" not in st.session_state:

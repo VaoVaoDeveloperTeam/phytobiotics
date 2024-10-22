@@ -3,7 +3,7 @@ venv/
 .venv/
 .env
 data/
-notebooks/
+#notebooks/
 .vscode
 __pycache__
 .streamlit/secrets.toml
