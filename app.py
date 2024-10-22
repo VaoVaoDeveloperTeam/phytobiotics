@@ -7,7 +7,8 @@ from assistant import get_assistant_answer
 # Load API keys from the .env file
 load_dotenv()
 
-openai_api_key = os.getenv("OPENAI_API_KEY")
+#openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_api_key = st.secrets["app_password"]
 
 # Initialize OpenAI API client
 if openai_api_key:
