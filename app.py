@@ -49,6 +49,11 @@ def main():
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
+        # Mensaje inicial del asistente
+        if len(st.session_state.messages) == 0:
+            initial_message = "Hola, ¿en qué puedo ayudarte hoy en relación a los estudios de Phytobiotics?"
+            st.session_state.messages.append({"role": "assistant", "content": initial_message})
+
         # Muestra los mensajes en la conversación
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):

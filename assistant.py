@@ -4,8 +4,9 @@ import json
 historic_data = ""
 # Intentamos cargar el archivo al importar el módulo
 try:
-    with open("data/research_studies.txt", "r", encoding="utf-8") as file:
+    with open("research_studies.txt", "r", encoding="utf-8") as file:
         historic_data = file.read()
+        print("Historical data loaded")
 except FileNotFoundError:
     print("El archivo research_studies.txt no se encontró.")
 except Exception as e:
