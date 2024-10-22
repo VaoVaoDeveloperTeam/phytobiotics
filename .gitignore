@@ -1,2 +1,9 @@
+.DS_Store
 venv/
+.venv/
 .env
+data/
+#notebooks/
+.vscode
+__pycache__
+.streamlit/secrets.toml
