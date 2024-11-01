@@ -4,20 +4,18 @@ from pydantic import BaseModel
 from typing import Dict, List, Union
 
 def get_structured_data_for_visualization(
-    function_arguments:dict,
-    ):
-    
+        function_arguments:dict,
+        openai_client: OpenAI = None,
+        ) -> Dict[str, Union[str, Dict[str, List[str]]]]:
+
+
     visualization_type = function_arguments.get("visualization_type","")
     visualization_title = function_arguments.get("visualization_title","")
     visualization_data = function_arguments.get("visualization_data","")
 
-    print(visualization_type)
-    print(visualization_title)
-    print(visualization_data)
-
-    #if not openai_client:
-    openai_api_key = st.secrets["OPENAI_API_KEY"]
-    openai_client = OpenAI(api_key=openai_api_key)
+    if not openai_client:
+        openai_api_key = st.secrets["OPENAI_API_KEY"]
+        openai_client = OpenAI(api_key=openai_api_key)
 
     # Definimos system message
     system_message = """
