@@ -1,14 +1,9 @@
 import streamlit as st
 from openai import OpenAI
 import os
+import json
 from dotenv import load_dotenv
 from assistant import get_assistant_answer
-
-# Load API keys from the .env file
-# load_dotenv()
-
-#openai_api_key = os.getenv("OPENAI_API_KEY")
-
 
 openai_api_key = st.secrets["OPENAI_API_KEY"]
 
@@ -44,7 +39,8 @@ def main():
         else: 
             proceed = True
     #################
-    #proceed = True
+    proceed = True
+    #################
     if proceed == True:
         # Verificamos si 'thread_id' está en session_state, si no, lo inicializamos
         if "thread_id" not in st.session_state:
@@ -69,21 +65,48 @@ def main():
 
         # Cuando el usuario envía un mensaje
         if user_input:
+
             # Añade el mensaje del usuario a la sesión
             st.session_state.messages.append({"role": "user", "content": user_input})
             with st.chat_message("user"):
                 st.markdown(user_input)
 
-            # Envía el mensaje al modelo de OpenAI
+            # Envía el mensaje al modelo de OpenAI y solicita la respuesta (get_assistant_answer)
             assistant_response = get_assistant_answer(openai_client, user_input, st.session_state.thread_id)
             answer = assistant_response["assistant_answer_text"]
+
             st.session_state.thread_id = assistant_response["thread_id"]  # Actualizamos el thread_id
-            print(f"thread id de la conversación: {st.session_state.thread_id}")
+            print(f"thread id de la conversación actual: {st.session_state.thread_id}")
 
             # Añade la respuesta del asistente a la sesión
             st.session_state.messages.append({"role": "assistant", "content": answer})
             with st.chat_message("assistant"):
                 st.markdown(answer)
+
+            # Check if there is structured data for visualization
+            assistant_response_details = assistant_response["tool_output_details"]
+            print(f"Tool output details FRONT received: {assistant_response_details}")
+
+            if "get_structured_data_for_visualization" in assistant_response_details:
+                
+                print("Details provided are for visualization")
+                
+                viz_instructions = assistant_response_details["get_structured_data_for_visualization"]
+                print(f"Viz instructions:{viz_instructions}")
+
+                viz_type = viz_instructions["viz_type"]
+                viz_title = viz_instructions["viz_title"]
+                viz_data = json.loads(viz_instructions["viz_data"])
+                print(f"{viz_data}")
+
+                first_key = list(viz_data.keys())[0]
+                second_key = list(viz_data.keys())[1]
+
+                print(f"First key: {first_key}, Second key: {second_key}")
+                st.write(viz_title)
+                if viz_type == "bar":
+                    st.bar_chart(viz_data, x=first_key, y=second_key,horizontal=True)                        
+
 
 # Run the Streamlit app
 if __name__ == '__main__':
