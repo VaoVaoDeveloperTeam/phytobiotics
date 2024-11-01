@@ -1,4 +1,5 @@
 import json
+from assistant_tools import get_structured_data_for_visualization
 
 # Definimos la variable global para los datos históricos
 historic_data = ""
@@ -15,10 +16,11 @@ except Exception as e:
 
 
 def get_assistant_answer(
-    client,
+    client, # OpenAI API client
     user_msg:str=None,
     thread_id:str=None,
-    assistant_id:str= "asst_2DXH2teVZyweB0gc1v1t4NsQ"
+    assistant_id:str= "asst_XGCaU8czsBPqszhZzkBNxgaa" # This is BETA.
+    #assistant_id:str="asst_2DXH2teVZyweB0gc1v1t4NsQ" # This is Production
     ):
 
     # Si la función no recibe un thread_id, genera un nuevo thread, inserta el mensaje template que se presenta al usuario en FRONT
@@ -33,7 +35,7 @@ def get_assistant_answer(
                 },
                 {
                 "role": "assistant",
-                "content": f"Estos son los datos históricos sobre trabajos de investigación con los que cuento: {historic_data}",
+                "content": f"Estos son los datos históricos sobre trabajos de investigación con los que cuento  : {historic_data}"
                 },
         ]) 
         thread_id=thread.id # Obtiene un nuevo thread_id y lo asigna para ser reutilizado.
@@ -96,9 +98,50 @@ def get_assistant_answer(
     else:
         print("No se encuentra mensaje y/o asistente para realizar una corrida")
 
+    ### INICIO DEL MANEJO DE LAS RESPUESTAS DEL ASISTENTE ###
+
+    ### FUNCIONES LLAMADAS POR EL ASISTENTE ###
+    # Se crea una lista vacía para almacenar los resultados de las llamadas a funciones.
+    tool_outputs = []
+    tool_output_details = {}
+
     if run.status == 'requires_action':
         print(f"Assistant Run requiere acciones por parte del servidor.")
 
+        for tool_call in run.required_action.submit_tool_outputs.tool_calls:
+            if tool_call.type == 'function':
+
+                function_name = tool_call.function.name
+                function_arguments = json.loads(tool_call.function.arguments)
+                print(f"Tool called: function '{function_name}'. Arguments: {function_arguments}")
+
+                if function_name=='get_structured_data_for_visualization':
+                    output = get_structured_data_for_visualization(function_arguments=function_arguments, openai_client=client)
+                    if output:
+                        tool_outputs.append({
+                            "tool_call_id": tool_call.id,
+                            "output": f"{str(output)}"
+                        })
+                    tool_output_details[function_name] = output
+
+        print(f"Tools call end.")
+
+        # Submit all tool outputs at once after collecting them in a list
+        if tool_outputs:
+            try:
+                run = client.beta.threads.runs.submit_tool_outputs_and_poll(
+                    thread_id=thread_id,
+                    run_id=run.id,
+                    tool_outputs=tool_outputs # Se agrega el resultado de la llamada a funciones al run.
+                    )
+                print("Tool outputs submitted successfully to the assistant.")
+            except Exception as e:
+                print("Failed to submit tool outputs:", e)
+        else:
+            print("No tool outputs to submit.")
+
+    ### FIN DE LA CORRIDA DEL ASISTENTE ###
+    # Si el asistente finaliza la corrida, se captura la respuesta final.
     if run.status == 'completed':
         print(f"Assistant Run finalizado.")
 
@@ -106,10 +149,14 @@ def get_assistant_answer(
         messages = client.beta.threads.messages.list(thread_id=thread_id)
         answer = messages.data[0].content[0].text.value
 
-        print(f"Respuesta: {answer}")
+        # tool_output_details es data[1]
+
+        print(f"Answer: {answer}")
+        if tool_output_details:
+            print(f"Answer details: {tool_output_details}")
 
         return {
             "thread_id":thread_id,
             "assistant_answer_text":answer,
-            "tool_output_details": None  # En caso de no haber funciones llamadas, se devuelve el diccionario vacío.
+            "tool_output_details": tool_output_details  # En caso de no haber funciones llamadas, se devuelve el diccionario vacío.
             }
